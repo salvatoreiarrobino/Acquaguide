@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#020d1a"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="AquaGuide"/>
+<meta name="description" content="Guida completa per acquari d'acqua dolce con AI"/>
+<title>AquaGuide 🐠</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=DM+Mono:ital@0;1&display=swap"/>
+<style>
+:root {
+  --bg0: #020d1a; --bg1: #041e35; --bg2: #073352;
+  --accent: #22d3ee; --accent2: #0ea5e9; --accent3: #6366f1;
+  --green: #4ade80; --red: #f87171; --orange: #fb923c; --yellow: #fcd34d;
+  --text: #e0f2fe; --text2: #7dd3fc; --text3: #4a7fa8;
+  --card: rgba(255,255,255,0.04); --card-border: rgba(255,255,255,0.08);
+  --radius: 18px; --radius-sm: 10px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { height:100%; overflow:hidden; background:var(--bg0); color:var(--text); font-family:'Outfit',sans-serif; }
+body { display:flex; flex-direction:column; }
+
+/* scrollbar */
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:rgba(34,211,238,0.2); border-radius:4px; }
+
+/* ============ LAYOUT ============ */
+#app { display:flex; flex-direction:column; height:100vh; max-width:480px; margin:0 auto; width:100%; position:relative; }
+.header { flex-shrink:0; background:rgba(2,13,26,0.95); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px); border-bottom:1px solid rgba(34,211,238,0.1); padding:env(safe-area-inset-top,0) 0 0; z-index:50; }
+.header-inner { padding:14px 18px 0; }
+.header-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.logo { display:flex; align-items:center; gap:10px; }
+.logo-icon { font-size:30px; }
+.logo-text { line-height:1.1; }
+.logo-title { font-size:22px; font-weight:900; color:var(--accent); letter-spacing:-0.5px; }
+.logo-sub { font-size:10px; color:rgba(34,211,238,0.4); letter-spacing:2px; font-weight:600; }
+.header-actions { display:flex; gap:8px; }
+.icon-btn { width:38px; height:38px; border-radius:12px; background:var(--card); border:1px solid var(--card-border); display:flex; align-items:center; justify-content:center; font-size:18px; cursor:pointer; transition:all 0.18s; }
+.icon-btn:active { transform:scale(0.93); background:rgba(34,211,238,0.12); }
+.tabs { display:flex; }
+.tab { flex:1; padding:10px 0; border:none; background:transparent; color:var(--text3); font-size:14px; font-weight:600; cursor:pointer; border-bottom:2.5px solid transparent; transition:all 0.2s; font-family:'Outfit',sans-serif; display:flex; align-items:center; justify-content:center; gap:6px; }
+.tab.active { color:var(--accent); border-color:var(--accent); }
+.tab-badge { font-size:10px; background:rgba(34,211,238,0.15); color:var(--accent); padding:2px 7px; border-radius:20px; font-weight:700; }
+
+/* ============ CONTENT ============ */
+.content { flex:1; overflow:hidden; display:flex; flex-direction:column; }
+.scroll-area { flex:1; overflow-y:auto; padding:14px 14px calc(80px + var(--safe-bottom)); overscroll-behavior:contain; }
+
+/* ============ SEARCH & FILTERS ============ */
+.search-wrap { position:relative; margin-bottom:10px; }
+.search-icon { position:absolute; left:13px; top:50%; transform:translateY(-50%); font-size:16px; opacity:0.4; }
+.search-input { width:100%; padding:13px 13px 13px 40px; background:rgba(255,255,255,0.05); border:1px solid rgba(34,211,238,0.18); border-radius:14px; color:var(--text); font-size:14px; outline:none; font-family:'Outfit',sans-serif; transition:border-color 0.2s; }
+.search-input:focus { border-color:rgba(34,211,238,0.4); }
+.search-input::placeholder { color:var(--text3); }
+.filter-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.filter-toggle { background:var(--card); border:1px solid var(--card-border); border-radius:20px; padding:7px 14px; color:var(--text3); font-size:13px; cursor:pointer; font-weight:600; font-family:'Outfit',sans-serif; transition:all 0.18s; display:flex; align-items:center; gap:6px; }
+.filter-toggle.open { background:rgba(34,211,238,0.1); border-color:rgba(34,211,238,0.35); color:var(--accent); }
+.result-count { font-size:12px; color:var(--text3); }
+.filters-panel { background:rgba(4,30,53,0.97); border:1px solid rgba(34,211,238,0.12); border-radius:var(--radius); padding:14px; margin-bottom:12px; animation:fadeUp 0.2s ease; }
+.filter-section { margin-bottom:12px; }
+.filter-label { font-size:10px; color:var(--accent2); font-weight:700; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:7px; }
+.pill-group { display:flex; flex-wrap:wrap; gap:5px; }
+.pill { padding:5px 12px; border-radius:20px; font-size:12px; cursor:pointer; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--text3); font-weight:600; transition:all 0.15s; font-family:'Outfit',sans-serif; }
+.pill.active { background:var(--accent2); border-color:var(--accent2); color:#fff; }
+.reset-btn { width:100%; padding:8px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); border-radius:var(--radius-sm); color:#fca5a5; cursor:pointer; font-size:12px; font-weight:700; font-family:'Outfit',sans-serif; transition:all 0.15s; margin-top:4px; }
+.reset-btn:active { background:rgba(239,68,68,0.2); }
+
+/* ============ CARDS ============ */
+.cards { display:flex; flex-direction:column; gap:10px; }
+.card { background:var(--card); border:1px solid var(--card-border); border-radius:var(--radius); padding:14px; cursor:pointer; transition:all 0.2s; animation:fadeUp 0.3s ease both; }
+.card.expanded { background:rgba(34,211,238,0.07); border-color:rgba(34,211,238,0.25); }
+.card:active { transform:scale(0.99); }
+.card-top { display:flex; align-items:flex-start; gap:12px; }
+.card-emoji { width:52px; height:52px; border-radius:14px; background:rgba(34,211,238,0.08); border:1px solid rgba(34,211,238,0.12); display:flex; align-items:center; justify-content:center; font-size:26px; flex-shrink:0; }
+.card-info { flex:1; min-width:0; }
+.card-name { font-size:16px; font-weight:700; color:var(--text); line-height:1.2; }
+.card-sci { font-size:11px; color:rgba(34,211,238,0.6); font-style:italic; font-family:'DM Mono',monospace; margin:3px 0 8px; }
+.card-tags { display:flex; flex-wrap:wrap; gap:4px; }
+.tag { font-size:10px; padding:2px 8px; border-radius:20px; font-weight:700; }
+.card-liters { font-size:11px; font-weight:700; color:var(--accent); background:rgba(34,211,238,0.08); padding:4px 8px; border-radius:8px; white-space:nowrap; flex-shrink:0; }
+.card-detail { margin-top:14px; border-top:1px solid rgba(34,211,238,0.1); padding-top:13px; animation:fadeUp 0.2s ease; }
+.card-desc { font-size:13.5px; color:#cbd5e1; line-height:1.75; margin-bottom:13px; }
+.stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+.stat-box { background:rgba(255,255,255,0.03); border-radius:var(--radius-sm); padding:9px 10px; border:1px solid rgba(255,255,255,0.06); }
+.stat-label { font-size:9px; color:var(--text3); letter-spacing:0.8px; text-transform:uppercase; margin-bottom:3px; }
+.stat-value { font-size:12px; font-weight:700; color:var(--text); }
+.empty { text-align:center; padding:60px 20px; color:var(--text3); }
+.empty-icon { font-size:48px; margin-bottom:12px; }
+
+/* ============ AI CHAT ============ */
+#ai-view { display:none; flex-direction:column; height:100%; }
+#ai-view.visible { display:flex; }
+.chat-messages { flex:1; overflow-y:auto; padding:14px 14px 14px; display:flex; flex-direction:column; gap:12px; }
+.msg { max-width:88%; animation:fadeUp 0.25s ease; }
+.msg.user { align-self:flex-end; }
+.msg.ai { align-self:flex-start; }
+.msg-bubble { padding:11px 14px; border-radius:18px; font-size:14px; line-height:1.65; }
+.msg.user .msg-bubble { background:var(--accent2); color:#fff; border-bottom-right-radius:5px; }
+.msg.ai .msg-bubble { background:rgba(255,255,255,0.06); border:1px solid rgba(34,211,238,0.12); color:var(--text); border-bottom-left-radius:5px; }
+.msg-time { font-size:10px; color:var(--text3); margin-top:4px; text-align:right; }
+.msg.ai .msg-time { text-align:left; }
+.chat-input-wrap { padding:10px 14px calc(80px + var(--safe-bottom)); background:rgba(2,13,26,0.95); border-top:1px solid rgba(34,211,238,0.08); display:flex; gap:8px; align-items:flex-end; }
+.chat-input { flex:1; padding:12px 14px; background:rgba(255,255,255,0.05); border:1px solid rgba(34,211,238,0.2); border-radius:14px; color:var(--text); font-size:14px; outline:none; font-family:'Outfit',sans-serif; resize:none; max-height:100px; min-height:46px; line-height:1.4; }
+.chat-input::placeholder { color:var(--text3); }
+.send-btn { width:46px; height:46px; border-radius:14px; background:var(--accent2); border:none; color:#fff; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.15s; flex-shrink:0; }
+.send-btn:active { transform:scale(0.93); }
+.send-btn:disabled { opacity:0.4; cursor:not-allowed; }
+.typing { display:flex; gap:4px; align-items:center; padding:4px 2px; }
+.typing span { width:7px; height:7px; background:var(--accent); border-radius:50%; animation:typingDot 1.2s ease infinite; }
+.typing span:nth-child(2) { animation-delay:0.2s; }
+.typing span:nth-child(3) { animation-delay:0.4s; }
+.ai-header { background:rgba(2,13,26,0.95); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-bottom:1px solid rgba(34,211,238,0.1); padding:14px 18px; display:flex; align-items:center; gap:12px; }
+.ai-avatar { width:42px; height:42px; border-radius:14px; background:linear-gradient(135deg,var(--accent2),var(--accent3)); display:flex; align-items:center; justify-content:center; font-size:20px; }
+.ai-name { font-size:16px; font-weight:800; color:var(--accent); }
+.ai-status { font-size:11px; color:var(--text3); display:flex; align-items:center; gap:5px; }
+.ai-dot { width:7px; height:7px; background:var(--green); border-radius:50%; animation:pulse 2s infinite; }
+.api-key-banner { margin:10px 14px; background:rgba(251,146,60,0.1); border:1px solid rgba(251,146,60,0.25); border-radius:var(--radius-sm); padding:11px 13px; font-size:13px; color:#fdba74; display:flex; flex-direction:column; gap:8px; }
+.api-key-banner strong { font-weight:700; color:var(--orange); }
+.api-key-input { width:100%; padding:10px 12px; background:rgba(255,255,255,0.06); border:1px solid rgba(251,146,60,0.3); border-radius:var(--radius-sm); color:var(--text); font-size:13px; outline:none; font-family:'DM Mono',monospace; }
+.api-key-input::placeholder { color:var(--text3); }
+.save-key-btn { padding:8px 16px; background:var(--orange); border:none; border-radius:var(--radius-sm); color:#fff; font-size:13px; font-weight:700; cursor:pointer; font-family:'Outfit',sans-serif; }
+
+/* ============ BOTTOM NAV ============ */
+.bottom-nav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:480px; background:rgba(2,13,26,0.97); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px); border-top:1px solid rgba(34,211,238,0.1); display:flex; padding:8px 0 calc(8px + var(--safe-bottom)); z-index:100; }
+.nav-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; padding:5px 0; transition:all 0.18s; }
+.nav-icon { font-size:22px; transition:transform 0.18s; }
+.nav-label { font-size:9px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--text3); }
+.nav-item.active .nav-label { color:var(--accent); }
+.nav-item.active .nav-icon { transform:scale(1.15); }
+.nav-item:active .nav-icon { transform:scale(0.9); }
+
+/* ============ INSTALL BANNER ============ */
+.install-banner { margin:10px 14px 0; background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(34,211,238,0.1)); border:1px solid rgba(99,102,241,0.3); border-radius:var(--radius-sm); padding:11px 13px; display:flex; align-items:center; gap:10px; }
+.install-text { flex:1; font-size:12px; color:#a5b4fc; font-weight:600; line-height:1.4; }
+.install-btn { padding:7px 14px; background:var(--accent3); border:none; border-radius:8px; color:#fff; font-size:12px; font-weight:700; cursor:pointer; font-family:'Outfit',sans-serif; white-space:nowrap; }
+.install-close { font-size:18px; color:var(--text3); cursor:pointer; padding:0 4px; }
+
+/* ============ QUICK PROMPTS ============ */
+.quick-prompts { padding:0 14px 10px; display:flex; gap:7px; overflow-x:auto; scrollbar-width:none; }
+.quick-prompts::-webkit-scrollbar { display:none; }
+.qp { background:rgba(34,211,238,0.08); border:1px solid rgba(34,211,238,0.18); border-radius:20px; padding:7px 13px; font-size:12px; color:var(--accent); white-space:nowrap; cursor:pointer; font-weight:600; font-family:'Outfit',sans-serif; transition:all 0.15s; }
+.qp:active { background:rgba(34,211,238,0.2); }
+
+/* ============ ANIMATIONS ============ */
+@keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+@keyframes typingDot { 0%,80%,100%{transform:scale(0.6);opacity:0.4} 40%{transform:scale(1);opacity:1} }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+@keyframes bubble { 0%{transform:translateY(0) scale(1);opacity:0.5} 100%{transform:translateY(-110vh) scale(1.4);opacity:0} }
+
+/* ============ BG BUBBLES ============ */
+.bg-bubbles { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+.bubble { position:absolute; bottom:-20px; border-radius:50%; background:rgba(34,211,238,0.05); border:1px solid rgba(34,211,238,0.08); animation:bubble linear infinite; }
+
+.views { flex:1; overflow:hidden; display:flex; flex-direction:column; }
+#guide-view { flex:1; overflow:hidden; display:flex; flex-direction:column; }
+</style>
+</head>
+<body>
+<div class="bg-bubbles" id="bgBubbles"></div>
+
+<div id="app">
+  <!-- INSTALL BANNER -->
+  <div class="install-banner" id="installBanner" style="display:none">
+    <span style="font-size:24px">📲</span>
+    <div class="install-text">Installa AquaGuide come app sul tuo smartphone!</div>
+    <button class="install-btn" id="installBtn">Installa</button>
+    <span class="install-close" onclick="document.getElementById('installBanner').style.display='none'">✕</span>
+  </div>
+
+  <!-- HEADER (only for guide view) -->
+  <div class="header" id="mainHeader">
+    <div class="header-inner">
+      <div class="header-top">
+        <div class="logo">
+          <div class="logo-icon">🐠</div>
+          <div class="logo-text">
+            <div class="logo-title">AquaGuide</div>
+            <div class="logo-sub">ACQUARIO DOLCE</div>
+          </div>
+        </div>
+        <div class="header-actions">
+          <div class="icon-btn" onclick="scrollToTop()" title="Su">⬆️</div>
+        </div>
+      </div>
+      <div class="tabs">
+        <button class="tab active" id="tabFish" onclick="switchTab('fish')">🐟 Pesci <span class="tab-badge">12</span></button>
+        <button class="tab" id="tabPlant" onclick="switchTab('plant')">🌿 Piante <span class="tab-badge">15</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEWS -->
+  <div class="views">
+
+    <!-- GUIDE VIEW -->
+    <div id="guide-view">
+      <div class="scroll-area" id="scrollArea">
+
+        <!-- SEARCH -->
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input class="search-input" id="searchInput" type="text" placeholder="Cerca per nome o nome scientifico..." oninput="renderCards()"/>
+        </div>
+
+        <!-- FILTER ROW -->
+        <div class="filter-row">
+          <button class="filter-toggle" id="filterToggle" onclick="toggleFilters()">⚙️ Filtri <span id="filterArrow">▼</span></button>
+          <span class="result-count" id="resultCount">0 risultati</span>
+        </div>
+
+        <!-- FILTERS PANEL -->
+        <div class="filters-panel" id="filtersPanel" style="display:none">
+          <div class="filter-section">
+            <div class="filter-label">💧 Litri Acquario</div>
+            <div class="pill-group" id="pillLiters"></div>
+          </div>
+          <div id="dynamicFilters"></div>
+          <button class="reset-btn" onclick="resetFilters()">✕ Reset tutti i filtri</button>
+        </div>
+
+        <!-- CARDS -->
+        <div class="cards" id="cardsContainer"></div>
+
+      </div>
+    </div>
+
+    <!-- AI VIEW -->
+    <div id="ai-view">
+      <div class="ai-header">
+        <div class="ai-avatar">🤖</div>
+        <div>
+          <div class="ai-name">Claude Acquaristico</div>
+          <div class="ai-status"><span class="ai-dot"></span> Assistente AI attivo</div>
+        </div>
+      </div>
+      <div class="api-key-banner" id="apiKeyBanner">
+        <div><strong>🔑 Inserisci la tua API Key Anthropic</strong></div>
+        <div style="font-size:12px;color:#fdba74;">Ottienila su <strong>console.anthropic.com</strong> → API Keys</div>
+        <input class="api-key-input" id="apiKeyInput" type="password" placeholder="sk-ant-api03-..."/>
+        <button class="save-key-btn" onclick="saveApiKey()">Salva e Attiva ✓</button>
+      </div>
+      <div class="quick-prompts" id="quickPrompts">
+        <div class="qp" onclick="sendQuick('Quali pesci vanno bene per un acquario da 40 litri per principianti?')">🐟 Pesci per 40L</div>
+        <div class="qp" onclick="sendQuick('Piante facili senza CO2 per un acquario nano?')">🌿 Piante senza CO2</div>
+        <div class="qp" onclick="sendQuick('Crea un acquario Nature da 60 litri: quali pesci e piante abbinare?')">🏞️ Setup 60L Nature</div>
+        <div class="qp" onclick="sendQuick('Come eliminare le alghe in acquario?')">🧹 Rimuovere alghe</div>
+        <div class="qp" onclick="sendQuick('Il Betta può stare con altri pesci?')">🤔 Compatibilità Betta</div>
+        <div class="qp" onclick="sendQuick('Quali sono i parametri ideali per un acquario community?')">💧 Parametri acqua</div>
+      </div>
+      <div class="chat-messages" id="chatMessages">
+        <div class="msg ai">
+          <div class="msg-bubble">
+            👋 Ciao! Sono il tuo assistente acquaristico AI, alimentato da Claude.<br><br>
+            Posso aiutarti con:<br>
+            🐟 <strong>Consigli su pesci e piante</strong><br>
+            🏞️ <strong>Progettare il tuo acquario</strong><br>
+            💧 <strong>Parametri dell'acqua</strong><br>
+            ⚕️ <strong>Malattie e trattamenti</strong><br>
+            🌿 <strong>Compatibilità tra specie</strong><br><br>
+            Inserisci la tua API Key qui sopra per iniziare!
+          </div>
+          <div class="msg-time">Adesso</div>
+        </div>
+      </div>
+      <div class="chat-input-wrap">
+        <textarea class="chat-input" id="chatInput" placeholder="Chiedi qualcosa sull'acquario..." rows="1" onkeydown="handleChatKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <div class="nav-item active" id="navGuide" onclick="showView('guide')">
+      <div class="nav-icon">🔬</div>
+      <div class="nav-label">Guida</div>
+    </div>
+    <div class="nav-item" id="navAI" onclick="showView('ai')">
+      <div class="nav-icon">🤖</div>
+      <div class="nav-label">AI Chat</div>
+    </div>
+  </nav>
+</div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const FISH = [
+  { id:1, name:"Neon Tetra", scientific:"Paracheirodon innesi", emoji:"🐟",
+    description:"Uno dei pesci più amati al mondo. Striscia blu neon e rossa sul fianco. Pacifico e vivace, ideale per acquari comunitari con acqua leggermente acida.",
+    tags:["gruppo","pacifico","medio-pelo"], diet:"Omnivoro", minLiters:40,
+    social:"Gruppo (min 6)", aggression:"Pacifico", layer:"Medio",
+    temperature:"22–26°C", color:["blu","rosso"], size:"3–4 cm", difficulty:"Facile" },
+  { id:2, name:"Caridina Rossa", scientific:"Caridina cantonensis", emoji:"🦐",
+    description:"Gamberetto nano vivacissimo. Ottimo alghivoro, molto delicato sulla qualità dell'acqua. Richiede acqua morbida e priva di rame.",
+    tags:["gruppo","pacifico","fondo"], diet:"Alghivoro/Detritofago", minLiters:20,
+    social:"Gruppo (min 10)", aggression:"Pacifico", layer:"Fondo",
+    temperature:"18–24°C", color:["rosso","bianco"], size:"2–3 cm", difficulty:"Avanzata" },
+  { id:3, name:"Corydoras Panda", scientific:"Corydoras panda", emoji:"🐡",
+    description:"Pesce di fondo gregario con caratteristiche macchie nere. Amano grufolate nel substrato morbido. Non devono stare da soli.",
+    tags:["gruppo","pacifico","fondo"], diet:"Omnivoro/Detritofago", minLiters:40,
+    social:"Gruppo (min 4)", aggression:"Pacifico", layer:"Fondo",
+    temperature:"20–26°C", color:["bianco","nero"], size:"4–5 cm", difficulty:"Facile" },
+  { id:4, name:"Betta Splendente", scientific:"Betta splendens", emoji:"🐠",
+    description:"Il maestoso pesce combattente. Pinne lunghe e colori spettacolari. I maschi non possono coabitare tra loro. Respira aria atmosferica.",
+    tags:["solitario","aggressivo","superficie"], diet:"Carnivoro", minLiters:20,
+    social:"Solitario (maschi)", aggression:"Aggressivo", layer:"Superficie/Medio",
+    temperature:"24–28°C", color:["rosso","blu","verde","bianco"], size:"5–7 cm", difficulty:"Media" },
+  { id:5, name:"Otocinclus", scientific:"Otocinclus affinis", emoji:"🐟",
+    description:"Piccolo pesce gatto alghivoro instancabile. Aderisce al vetro e alle piante pulendo alghe continuamente. Delicato: no acquari non maturi.",
+    tags:["gruppo","pacifico","fondo"], diet:"Alghivoro", minLiters:30,
+    social:"Gruppo (min 4)", aggression:"Pacifico", layer:"Fondo/Vetro",
+    temperature:"22–26°C", color:["marrone","bianco"], size:"3–4 cm", difficulty:"Media" },
+  { id:6, name:"Discus", scientific:"Symphysodon sp.", emoji:"🐡",
+    description:"Il Re dell'acquario dolce. Corpo discoidale magnificamente colorato. Richiede cure avanzate, acqua molto morbida e calda.",
+    tags:["gruppo","semi-aggressivo","medio-pelo"], diet:"Carnivoro/Omnivoro", minLiters:200,
+    social:"Gruppo (min 4)", aggression:"Semi-aggressivo", layer:"Medio",
+    temperature:"28–32°C", color:["rosso","blu","arancione"], size:"15–20 cm", difficulty:"Avanzata" },
+  { id:7, name:"Guppy", scientific:"Poecilia reticulata", emoji:"🐟",
+    description:"Pesce ideale per principianti. I maschi hanno code coloratissime e uniche. Si riproducono facilmente in acquario.",
+    tags:["gruppo","pacifico","superficie"], diet:"Omnivoro", minLiters:20,
+    social:"Gruppo (min 4)", aggression:"Pacifico", layer:"Superficie/Medio",
+    temperature:"22–28°C", color:["multicolore"], size:"3–6 cm", difficulty:"Facile" },
+  { id:8, name:"Scalare", scientific:"Pterophyllum scalare", emoji:"🐠",
+    description:"Ciclide dal corpo triangolare elegante. Può predare pesci molto piccoli (Neon!). Magnifico nel giusto contesto.",
+    tags:["gruppo","semi-aggressivo","medio-pelo"], diet:"Carnivoro/Omnivoro", minLiters:100,
+    social:"Coppia/Gruppo", aggression:"Semi-aggressivo", layer:"Medio",
+    temperature:"24–28°C", color:["argento","nero"], size:"12–15 cm", difficulty:"Media" },
+  { id:9, name:"Pleco Ancistrus", scientific:"Ancistrus sp.", emoji:"🐡",
+    description:"Piccolo pesce gatto con escrescenze sulla testa (nei maschi). Eccellente alghivoro. Ottima alternativa al Pleco Comune.",
+    tags:["solitario","pacifico","fondo"], diet:"Alghivoro/Detritofago", minLiters:60,
+    social:"1–2 esemplari", aggression:"Pacifico", layer:"Fondo",
+    temperature:"22–28°C", color:["marrone","nero"], size:"10–15 cm", difficulty:"Facile" },
+  { id:10, name:"Rasbora Arlecchino", scientific:"Trigonostigma heteromorpha", emoji:"🐟",
+    description:"Piccolo pesce con macchia triangolare nera. Elegante in branco, ideale per acquari Nature e Iwagumi.",
+    tags:["gruppo","pacifico","medio-pelo"], diet:"Omnivoro", minLiters:30,
+    social:"Gruppo (min 8)", aggression:"Pacifico", layer:"Medio",
+    temperature:"23–27°C", color:["arancione","nero"], size:"3–4 cm", difficulty:"Facile" },
+  { id:11, name:"Botia Clown", scientific:"Chromobotia macracanthus", emoji:"🐡",
+    description:"Loach vivacissimo con disegni arancioni e neri. Ottimo contro le lumache indesiderate. Cresce molto.",
+    tags:["gruppo","semi-aggressivo","fondo"], diet:"Omnivoro/Molluschi", minLiters:100,
+    social:"Gruppo (min 5)", aggression:"Semi-aggressivo", layer:"Fondo",
+    temperature:"24–30°C", color:["arancione","nero"], size:"15–20 cm", difficulty:"Media" },
+  { id:12, name:"Cardinal Tetra", scientific:"Paracheirodon axelrodi", emoji:"🐟",
+    description:"Simile al Neon ma con striscia rossa sull'intero fianco. Spettacolare in branco numeroso. Preferisce acqua acida.",
+    tags:["gruppo","pacifico","medio-pelo"], diet:"Omnivoro", minLiters:60,
+    social:"Gruppo (min 8)", aggression:"Pacifico", layer:"Medio",
+    temperature:"23–27°C", color:["blu","rosso"], size:"3–4 cm", difficulty:"Facile" },
+];
+
+const PLANTS = [
+  { id:101, name:"Anubias Nana", scientific:"Anubias barteri var. nana", emoji:"🌿",
+    description:"Pianta epifita robustissima con foglie ovali verde scuro. Resiste a quasi tutto: poca luce, no CO2, pesci erbivori. Da attaccare a legni e rocce.",
+    tags:["epifita","lenta","senza-co2","ombra"], substrate:"Nessuno (radici su rocce/legni)", co2:false,
+    fertilization:"Bassa", growth:"Lenta", minLiters:20, color:["verde"], difficulty:"Facile", light:"Bassa/Media" },
+  { id:102, name:"Anubias Barteri", scientific:"Anubias barteri", emoji:"🌿",
+    description:"Versione grande dell'Anubias. Foglie robuste e coriacee, resistenti ai pesci erbivori. Ideale per acquari spaziosi.",
+    tags:["epifita","lenta","senza-co2","ombra"], substrate:"Nessuno (rocce/legni)", co2:false,
+    fertilization:"Bassa", growth:"Lenta", minLiters:60, color:["verde"], difficulty:"Facile", light:"Bassa/Media" },
+  { id:103, name:"Java Fern", scientific:"Microsorum pteropus", emoji:"🌿",
+    description:"Felce acquatica epifita dalle foglie lunghe e ondulate. Cresce attaccata a rocce e radici. Produce plantule sulle foglie vecchie.",
+    tags:["epifita","lenta","senza-co2"], substrate:"Nessuno (rocce/legni)", co2:false,
+    fertilization:"Bassa", growth:"Media", minLiters:30, color:["verde"], difficulty:"Facile", light:"Bassa/Media" },
+  { id:104, name:"Muschio di Giava", scientific:"Taxiphyllum barbieri", emoji:"🌱",
+    description:"Muschio acquatico facilissimo da coltivare. Ideale per creare tappeti naturali o rivestire legni e rocce.",
+    tags:["epifita","lenta","senza-co2"], substrate:"Nessuno (superfici)", co2:false,
+    fertilization:"Minima", growth:"Lenta", minLiters:10, color:["verde"], difficulty:"Facile", light:"Bassa/Media" },
+  { id:105, name:"Bucephalandra", scientific:"Bucephalandra sp.", emoji:"🌿",
+    description:"Pianta epifita rara con foglie scure e iridescenti dai riflessi azzurri/viola. Molto lenta ma straordinariamente decorativa.",
+    tags:["epifita","lenta","senza-co2","rara"], substrate:"Nessuno (rocce/legni)", co2:false,
+    fertilization:"Media", growth:"Molto lenta", minLiters:20, color:["verde scuro","viola"], difficulty:"Media", light:"Bassa/Media" },
+  { id:106, name:"Ludwigia Rossa", scientific:"Ludwigia repens", emoji:"🍁",
+    description:"Pianta a stelo con foglie rosse/arancioni brillanti. Con molta luce e CO2 diventa di un rosso intenso spettacolare.",
+    tags:["stelo","veloce","rossa","co2"], substrate:"Substrato nutritivo", co2:true,
+    fertilization:"Alta", growth:"Veloce", minLiters:40, color:["rosso","arancione"], difficulty:"Media", light:"Alta" },
+  { id:107, name:"Vallisneria Spirale", scientific:"Vallisneria spiralis", emoji:"🌾",
+    description:"Pianta a nastro con foglie lunghe e ondulate. Cresce rapidamente formando foreste sottomarine. Ottima per sfondo.",
+    tags:["substrato","veloce","senza-co2","sfondo"], substrate:"Ghiaia/sabbia", co2:false,
+    fertilization:"Media", growth:"Veloce", minLiters:40, color:["verde"], difficulty:"Facile", light:"Media" },
+  { id:108, name:"Cryptocoryne Wendtii", scientific:"Cryptocoryne wendtii", emoji:"🌿",
+    description:"Pianta da medio/fondo con foglie ondulate marroni/verdi. Molto resistente ma reagisce con la 'crypt disease' ai cambiamenti bruschi.",
+    tags:["substrato","lenta","senza-co2"], substrate:"Substrato nutritivo/ghiaia", co2:false,
+    fertilization:"Media", growth:"Lenta", minLiters:20, color:["verde","marrone"], difficulty:"Facile", light:"Bassa/Media" },
+  { id:109, name:"Rotala Rotundifolia", scientific:"Rotala rotundifolia", emoji:"🍁",
+    description:"Stelo con foglie rosa/rosse in cima con buona luce. Crea colonne di colore caldo per il medio/sfondo.",
+    tags:["stelo","veloce","rossa","co2"], substrate:"Substrato nutritivo", co2:true,
+    fertilization:"Alta", growth:"Veloce", minLiters:40, color:["rosso","rosa","verde"], difficulty:"Media", light:"Alta" },
+  { id:110, name:"Helanthium Tenellum", scientific:"Helanthium tenellum", emoji:"🌱",
+    description:"Piccola pianta tappezzante ideale per il primo piano. Forma un prato verde denso via stoloni.",
+    tags:["tappeto","lenta","co2"], substrate:"Substrato nutritivo fine", co2:true,
+    fertilization:"Alta", growth:"Media", minLiters:40, color:["verde"], difficulty:"Media/Avanzata", light:"Alta" },
+  { id:111, name:"Eleocharis Parvula", scientific:"Eleocharis parvula", emoji:"🌱",
+    description:"Erba finissima da tappeto che ricorda un prato inglese. Il CO2 è fondamentale per una crescita densa.",
+    tags:["tappeto","lenta","co2"], substrate:"Substrato nutritivo", co2:true,
+    fertilization:"Alta", growth:"Lenta", minLiters:40, color:["verde"], difficulty:"Avanzata", light:"Alta" },
+  { id:112, name:"Sagittaria Subulata", scientific:"Sagittaria subulata", emoji:"🌾",
+    description:"Ottima alternativa alla Vallisneria. Resistente e si moltiplica facilmente formando gruppi compatti.",
+    tags:["substrato","veloce","senza-co2"], substrate:"Ghiaia/sabbia", co2:false,
+    fertilization:"Bassa/Media", growth:"Veloce", minLiters:30, color:["verde"], difficulty:"Facile", light:"Media" },
+  { id:113, name:"Myriophyllum Mattogrossense", scientific:"Myriophyllum mattogrossense", emoji:"🌿",
+    description:"Stelo con foglie pennate finissime color rosso/arancione intenso. Molto decorativa ma richiede cura.",
+    tags:["stelo","veloce","rossa","co2"], substrate:"Substrato nutritivo", co2:true,
+    fertilization:"Alta", growth:"Veloce", minLiters:60, color:["rosso","arancione"], difficulty:"Avanzata", light:"Alta" },
+  { id:114, name:"Pistia Stratiotes", scientific:"Pistia stratiotes", emoji:"🌺",
+    description:"Pianta galleggiante a rosetta con radici a cascata. Filtra l'acqua naturalmente e crea ombra per pesci timidi.",
+    tags:["galleggiante","veloce","senza-co2"], substrate:"Nessuno (galleggiante)", co2:false,
+    fertilization:"Bassa", growth:"Veloce", minLiters:60, color:["verde chiaro"], difficulty:"Facile", light:"Alta" },
+  { id:115, name:"Hygrophila Polysperma", scientific:"Hygrophila polysperma", emoji:"🌿",
+    description:"Stelo robustissimo per principianti assoluti. Cresce a grande velocità adattandosi a quasi ogni condizione.",
+    tags:["stelo","veloce","senza-co2"], substrate:"Ghiaia", co2:false,
+    fertilization:"Bassa", growth:"Molto veloce", minLiters:30, color:["verde"], difficulty:"Facile", light:"Media/Alta" },
+];
+
+const TAG_COLORS = {
+  "epifita":"#0EA5E9","lenta":"#4ADE80","veloce":"#FCD34D","senza-co2":"#34D399",
+  "co2":"#F87171","tappeto":"#C084FC","stelo":"#FB923C","galleggiante":"#38BDF8",
+  "substrato":"#A3E635","rossa":"#EF4444","gruppo":"#60A5FA","solitario":"#F59E0B",
+  "pacifico":"#4ADE80","aggressivo":"#EF4444","semi-aggressivo":"#FB923C",
+  "fondo":"#92400E","superficie":"#38BDF8","medio-pelo":"#818CF8","ombra":"#6EE7B7",
+  "rara":"#E879F9","sfondo":"#818CF8"
+};
+
+// ============================================================
+// STATE
+// ============================================================
+let currentTab = 'fish';
+let expandedId = null;
+let filtersOpen = false;
+let currentView = 'guide';
+let apiKey = localStorage.getItem('aquaguide_api_key') || '';
+let chatHistory = [];
+let deferredPrompt = null;
+
+const LITERS_OPTIONS = ['Tutti','20','30','40','60','100','200+'];
+const FISH_FILTER_DEFS = [
+  { key:'layer', label:'🎣 Piano Acqua', opts:['Tutti','Fondo','Medio','Superficie'] },
+  { key:'aggression', label:'⚔️ Aggressività', opts:['Tutti','Pacifico','Semi-aggressivo','Aggressivo'] },
+  { key:'social', label:'👥 Socialità', opts:['Tutti','Gruppo','Solitario','Coppia'] },
+  { key:'diet', label:'🍽️ Dieta', opts:['Tutti','Omnivoro','Carnivoro','Alghivoro'] },
+];
+const PLANT_FILTER_DEFS = [
+  { key:'growth', label:'📈 Crescita', opts:['Tutti','Lenta','Media','Veloce'] },
+  { key:'co2', label:'💨 CO2', opts:['Tutti','Con CO2','Senza CO2'] },
+  { key:'type', label:'🌿 Tipo', opts:['Tutti','Epifita','Substrato','Tappeto','Stelo','Galleggiante'] },
+  { key:'color', label:'🎨 Colore', opts:['Tutti','Verde','Rossa/Arancione','Viola'] },
+];
+
+let filters = { liters:'Tutti', layer:'Tutti', aggression:'Tutti', social:'Tutti', diet:'Tutti', growth:'Tutti', co2:'Tutti', type:'Tutti', color:'Tutti' };
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('load', () => {
+  generateBubbles();
+  renderPillFilters();
+  renderCards();
+  if (apiKey) document.getElementById('apiKeyBanner').style.display = 'none';
+});
+
+// PWA install prompt
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const banner = document.getElementById('installBanner');
+  banner.style.display = 'flex';
+  banner.style.animation = 'fadeUp 0.4s ease';
+});
+document.getElementById('installBtn').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const result = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('installBanner').style.display = 'none';
+});
+window.addEventListener('appinstalled', () => {
+  document.getElementById('installBanner').style.display = 'none';
+});
+
+function generateBubbles() {
+  const wrap = document.getElementById('bgBubbles');
+  for (let i = 0; i < 14; i++) {
+    const b = document.createElement('div');
+    b.className = 'bubble';
+    const size = 8 + (i % 5) * 6;
+    b.style.cssText = `left:${4+i*7}%;width:${size}px;height:${size}px;animation-duration:${7+i*1.1}s;animation-delay:${i*0.7}s`;
+    wrap.appendChild(b);
+  }
+}
+
+// ============================================================
+// VIEW SWITCHING
+// ============================================================
+function showView(view) {
+  currentView = view;
+  document.getElementById('guide-view').style.display = view === 'guide' ? 'flex' : 'none';
+  document.getElementById('ai-view').style.display = view === 'ai' ? 'flex' : 'none';
+  document.getElementById('mainHeader').style.display = view === 'guide' ? '' : 'none';
+  document.getElementById('navGuide').classList.toggle('active', view === 'guide');
+  document.getElementById('navAI').classList.toggle('active', view === 'ai');
+}
+
+// ============================================================
+// TABS
+// ============================================================
+function switchTab(tab) {
+  currentTab = tab;
+  expandedId = null;
+  document.getElementById('tabFish').classList.toggle('active', tab === 'fish');
+  document.getElementById('tabPlant').classList.toggle('active', tab === 'plant');
+  resetFilters(true);
+  renderPillFilters();
+  renderCards();
+}
+
+// ============================================================
+// FILTERS
+// ============================================================
+function toggleFilters() {
+  filtersOpen = !filtersOpen;
+  document.getElementById('filtersPanel').style.display = filtersOpen ? 'block' : 'none';
+  document.getElementById('filterToggle').classList.toggle('open', filtersOpen);
+  document.getElementById('filterArrow').textContent = filtersOpen ? '▲' : '▼';
+}
+
+function renderPillFilters() {
+  // Liters
+  const litEl = document.getElementById('pillLiters');
+  litEl.innerHTML = LITERS_OPTIONS.map(l =>
+    `<div class="pill ${filters.liters===l?'active':''}" onclick="setFilter('liters','${l}')">${l==='Tutti'?'Tutti':'≥'+l+'L'}</div>`
+  ).join('');
+
+  // Dynamic filters
+  const defs = currentTab === 'fish' ? FISH_FILTER_DEFS : PLANT_FILTER_DEFS;
+  document.getElementById('dynamicFilters').innerHTML = defs.map(d => `
+    <div class="filter-section">
+      <div class="filter-label">${d.label}</div>
+      <div class="pill-group">${d.opts.map(o =>
+        `<div class="pill ${filters[d.key]===o?'active':''}" onclick="setFilter('${d.key}','${o}')">${o}</div>`
+      ).join('')}</div>
+    </div>
+  `).join('');
+}
+
+function setFilter(key, val) {
+  filters[key] = val;
+  renderPillFilters();
+  renderCards();
+}
+
+function resetFilters(silent=false) {
+  Object.keys(filters).forEach(k => filters[k] = 'Tutti');
+  document.getElementById('searchInput').value = '';
+  if (!silent) { renderPillFilters(); renderCards(); }
+}
+
+// ============================================================
+// FILTER LOGIC
+// ============================================================
+function getFiltered() {
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  const items = currentTab === 'fish' ? FISH : PLANTS;
+
+  return items.filter(item => {
+    if (q && !item.name.toLowerCase().includes(q) && !item.scientific.toLowerCase().includes(q) && !item.tags.some(t => t.includes(q))) return false;
+    if (filters.liters !== 'Tutti') {
+      const l = filters.liters === '200+' ? 200 : parseInt(filters.liters);
+      if (item.minLiters > l) return false;
+    }
+    if (currentTab === 'fish') {
+      if (filters.layer !== 'Tutti' && !item.layer.toLowerCase().includes(filters.layer.toLowerCase())) return false;
+      if (filters.aggression !== 'Tutti' && item.aggression !== filters.aggression) return false;
+      if (filters.social !== 'Tutti' && !item.social.toLowerCase().includes(filters.social.toLowerCase())) return false;
+      if (filters.diet !== 'Tutti' && !item.diet.toLowerCase().includes(filters.diet.toLowerCase())) return false;
+    } else {
+      if (filters.growth !== 'Tutti' && !item.growth.toLowerCase().includes(filters.growth.toLowerCase())) return false;
+      if (filters.co2 !== 'Tutti') {
+        if (filters.co2 === 'Con CO2' && !item.co2) return false;
+        if (filters.co2 === 'Senza CO2' && item.co2) return false;
+      }
+      if (filters.type !== 'Tutti' && !item.tags.some(t => t.toLowerCase() === filters.type.toLowerCase())) return false;
+      if (filters.color !== 'Tutti') {
+        const cm = {'Verde':'verde','Rossa/Arancione':['rosso','arancione'],'Viola':['viola']};
+        const cv = cm[filters.color]; const arr = Array.isArray(cv)?cv:[cv];
+        if (!item.color.some(c => arr.some(a => c.toLowerCase().includes(a)))) return false;
+      }
+    }
+    return true;
+  });
+}
+
+// ============================================================
+// RENDER CARDS
+// ============================================================
+function renderCards() {
+  const filtered = getFiltered();
+  document.getElementById('resultCount').textContent = `${filtered.length} risultati`;
+  const container = document.getElementById('cardsContainer');
+
+  if (!filtered.length) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">🔍</div>Nessun risultato.<br>Prova a cambiare i filtri.</div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map((item, i) => {
+    const isExp = expandedId === item.id;
+    const tagsHtml = item.tags.slice(0,4).map(t => {
+      const c = TAG_COLORS[t] || '#6b9ab8';
+      return `<span class="tag" style="background:${c}22;border:1px solid ${c}55;color:${c}">${t}</span>`;
+    }).join('');
+
+    let detail = '';
+    if (isExp) {
+      const stats = currentTab === 'fish' ? [
+        ['🎣','Piano Acqua',item.layer,null],
+        ['🌡️','Temperatura',item.temperature,null],
+        ['🍽️','Dieta',item.diet,null],
+        ['👥','Socialità',item.social,null],
+        ['⚔️','Aggressività',item.aggression, item.aggression==='Aggressivo'?'#EF4444':item.aggression==='Semi-aggressivo'?'#FB923C':'#4ADE80'],
+        ['📏','Dimensioni',item.size,null],
+        ['⭐','Difficoltà',item.difficulty,null],
+      ] : [
+        ['📈','Crescita',item.growth,null],
+        ['💡','Luce',item.light,null],
+        ['💨','CO2',item.co2?'Consigliata':'Non necessaria',item.co2?'#F87171':'#4ADE80'],
+        ['🌱','Fertilizzazione',item.fertilization,null],
+        ['🪨','Substrato',item.substrate,null],
+        ['⭐','Difficoltà',item.difficulty,null],
+      ];
+      const statsHtml = stats.map(([ic,lb,vl,cl]) =>
+        `<div class="stat-box"><div class="stat-label">${ic} ${lb}</div><div class="stat-value" style="${cl?'color:'+cl:''}">${vl}</div></div>`
+      ).join('');
+      detail = `<div class="card-detail"><p class="card-desc">${item.description}</p><div class="stats-grid">${statsHtml}</div></div>`;
+    }
+
+    return `<div class="card ${isExp?'expanded':''}" style="animation-delay:${i*0.035}s" onclick="toggleCard(${item.id})">
+      <div class="card-top">
+        <div class="card-emoji">${item.emoji}</div>
+        <div class="card-info">
+          <div class="card-name">${item.name}</div>
+          <div class="card-sci">${item.scientific}</div>
+          <div class="card-tags">${tagsHtml}</div>
+        </div>
+        <div class="card-liters">≥${item.minLiters}L</div>
+      </div>
+      ${detail}
+    </div>`;
+  }).join('');
+}
+
+function toggleCard(id) {
+  expandedId = expandedId === id ? null : id;
+  renderCards();
+}
+
+function scrollToTop() {
+  document.getElementById('scrollArea').scrollTo({ top:0, behavior:'smooth' });
+}
+
+// ============================================================
+// AI CHAT
+// ============================================================
+function saveApiKey() {
+  const val = document.getElementById('apiKeyInput').value.trim();
+  if (!val.startsWith('sk-')) { alert('Chiave non valida. Deve iniziare con sk-'); return; }
+  apiKey = val;
+  localStorage.setItem('aquaguide_api_key', val);
+  document.getElementById('apiKeyBanner').style.display = 'none';
+  addMessage('ai', '✅ API Key salvata! Ora puoi chiedermi qualsiasi cosa sull\'acquariofilia. Prova con uno dei suggerimenti qui sopra o scrivi la tua domanda!');
+}
+
+function handleChatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function addMessage(role, text) {
+  const messages = document.getElementById('chatMessages');
+  const d = document.createElement('div');
+  d.className = `msg ${role}`;
+  const now = new Date().toLocaleTimeString('it-IT', {hour:'2-digit',minute:'2-digit'});
+  d.innerHTML = `<div class="msg-bubble">${text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>')}</div><div class="msg-time">${now}</div>`;
+  messages.appendChild(d);
+  messages.scrollTop = messages.scrollHeight;
+  return d;
+}
+
+function addTyping() {
+  const messages = document.getElementById('chatMessages');
+  const d = document.createElement('div');
+  d.className = 'msg ai'; d.id = 'typingIndicator';
+  d.innerHTML = `<div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  messages.appendChild(d);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function removeTyping() {
+  const el = document.getElementById('typingIndicator');
+  if (el) el.remove();
+}
+
+function sendQuick(text) {
+  document.getElementById('chatInput').value = text;
+  sendMessage();
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  if (!apiKey) {
+    addMessage('ai', '⚠️ Inserisci prima la tua API Key Anthropic per usare la chat AI!');
+    showView('ai');
+    return;
+  }
+
+  input.value = ''; input.style.height = 'auto';
+  addMessage('user', text);
+
+  chatHistory.push({ role:'user', content: text });
+
+  const btn = document.getElementById('sendBtn');
+  btn.disabled = true;
+  addTyping();
+
+  const systemPrompt = `Sei un esperto acquaristico italiano specializzato in acquari d'acqua dolce. Rispondi sempre in italiano. 
+Sei preciso, pratico e appassionato. Dai consigli concreti su:
+- Pesci e piante d'acqua dolce (nomi scientifici e comuni)
+- Compatibilità tra specie
+- Parametri dell'acqua (pH, KH, GH, TDS, temperatura)
+- Setup e scaping acquari (Dutch, Nature, Iwagumi, Jungle)
+- CO2, fertilizzazione, illuminazione
+- Malattie e trattamenti
+- Alimentazione dei pesci
+- Riproduzione
+Usa emoji appropriati per rendere le risposte più leggibili. Struttura le risposte con chiarezza.
+Conosci molto bene i dati di questa app: ${JSON.stringify([...FISH.map(f=>f.name), ...PLANTS.map(p=>p.name)])}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'x-api-key':apiKey, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system: systemPrompt,
+        messages: chatHistory.slice(-10)
+      })
+    });
+
+    const data = await res.json();
+    removeTyping();
+
+    if (data.error) {
+      const msg = data.error.type === 'authentication_error'
+        ? '❌ API Key non valida. Verifica la chiave su console.anthropic.com'
+        : `❌ Errore: ${data.error.message}`;
+      addMessage('ai', msg);
+      chatHistory.pop();
+    } else {
+      const reply = data.content[0].text;
+      chatHistory.push({ role:'assistant', content: reply });
+      addMessage('ai', reply);
+    }
+  } catch(err) {
+    removeTyping();
+    addMessage('ai', '❌ Errore di connessione. Controlla la tua connessione internet.');
+    chatHistory.pop();
+  }
+
+  btn.disabled = false;
+}
+
+// ============================================================
+// SERVICE WORKER (PWA offline support)
+// ============================================================
+if ('serviceWorker' in navigator) {
+  const swCode = `
+const CACHE = 'aquaguide-v1';
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(['/'])));
+  self.skipWaiting();
+});
+self.addEventListener('fetch', e => {
+  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).catch(() => new Response('Offline - AquaGuide', {headers:{'Content-Type':'text/html'}}))));
+});
+`;
+  const blob = new Blob([swCode], { type:'application/javascript' });
+  const swURL = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swURL).catch(() => {});
+}
+
+// ============================================================
+// MANIFEST (PWA installability)
+// ============================================================
+const manifest = {
+  name:"AquaGuide - Acquario Dolce",
+  short_name:"AquaGuide",
+  description:"Guida completa pesci e piante d'acqua dolce con AI",
+  start_url:".",
+  display:"standalone",
+  background_color:"#020d1a",
+  theme_color:"#020d1a",
+  orientation:"portrait",
+  icons:[
+    { src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%23020d1a'/%3E%3Ctext y='130' x='20' font-size='140'%3E🐠%3C/text%3E%3C/svg%3E", sizes:"192x192", type:"image/svg+xml" },
+    { src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%23020d1a'/%3E%3Ctext y='370' x='40' font-size='380'%3E🐠%3C/text%3E%3C/svg%3E", sizes:"512x512", type:"image/svg+xml" }
+  ]
+};
+const manifestBlob = new Blob([JSON.stringify(manifest)], {type:'application/manifest+json'});
+const manifestURL = URL.createObjectURL(manifestBlob);
+const manifestLink = document.createElement('link');
+manifestLink.rel = 'manifest'; manifestLink.href = manifestURL;
+document.head.appendChild(manifestLink);
+</script>
+</body>
+</html>
